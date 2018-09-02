@@ -25,7 +25,14 @@ module Actions
 
         def run
           ::User.as :admin do
-            host           = ::Host.find(input[:host][:id])
+            # output contents of 'input' variable in debug log.
+            ::Foreman::Logging.logger('foreman-tasks').debug "'input' value: #{input}"
+            # input[:facts] gets converted to an escaped String, fix by "eval":ing back to hash
+            input[:facts] = eval(input[:facts])
+            # input contains key-name "managed" if host is managed, or "host"
+            # if unmanaged by foreman.
+            host           = ::Host.find(input[:managed][:id]) if input.has_key?(:managed)
+            host           = ::Host.find(input[:host][:id]) if input.has_key?(:host)
             state          = host.import_facts(input[:facts])
             output[:state] = state
           end
